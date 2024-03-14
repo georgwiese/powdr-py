@@ -290,3 +290,31 @@ def run(generator: Callable[[], PIL], n: int, field: str) -> None:
     prover = "halo2-mock" if field == "bn254" else "estark"
 
     subprocess.run(["powdr", "pil", filename, "-o", "output", "-f", "--field", field, "--prove-with", prover])
+
+class Witness:
+    def __init__(self):
+        pass
+
+class Fixed:
+    def __init__(self, values: 'ConstantList'):
+        self.values = values
+
+class Circuit:
+    def __setattr__(self, name, value):
+        if isinstance(value, list):
+            transformed_value = []
+            for i, item in enumerate(value):
+                if isinstance(item, Fixed):
+                    transformed_value.append(FixedColumn(f"name_{i}", item.values))
+                elif isinstance(item, Witness):
+                    transformed_value.append(WitnessColumn(f"name_{i}"))
+                else:
+                    raise TypeError("List elements must be Fixed or Witness")
+            self.__dict__[name] = transformed_value
+        elif isinstance(value, Fixed):
+            self.__dict__[name] = FixedColumn(name, value.values)
+        elif isinstance(value, Witness):
+            self.__dict__[name] = WitnessColumn(name)
+        else:
+            super().__setattr__(name, value)
+

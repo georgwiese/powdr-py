@@ -1,4 +1,4 @@
-from powdr import PIL, Expression, FixedColumn, NumberExpression, WitnessColumn, lookup, star
+from powdr import PIL, Circuit, Expression, Fixed, FixedColumn, NumberExpression, Witness, WitnessColumn, lookup, star
 
 # Number of field elements in the state
 STATE_SIZE = 3
@@ -62,3 +62,49 @@ def poseidon_bn254() -> PIL:
     output_regs = [WitnessColumn(f"output_reg_{i}") for i in range(OUTPUT_SIZE)]
     SECOND_ROW = FixedColumn("SECOND_ROW", [0, 1] + star([0]))
     yield lookup((SECOND_ROW, [NumberExpression(0)] * STATE_SIZE + output_regs), (FIRSTBLOCK, state + output))
+
+
+class PoseidonBn254Circuit(Circuit):
+
+    __name__ = "poseidon_bn254_via_circut"
+
+    def __init__(self):
+        # Fixed columns
+        self.FIRSTBLOCK = Fixed(star([1] + [0] * (ROWS_PER_HASH - 1)))
+        self.LASTBLOCK = Fixed(star([0] * (ROWS_PER_HASH - 1) + [1]))
+        self.LAST = Fixed(star([0] * (ROWS_PER_HASH - 1) + [1]) + [1])
+        self.PARTIAL = Fixed(star(
+            [0] * (FULL_ROUNDS // 2) + [1] * PARTIAL_ROUNDS + [0] * (FULL_ROUNDS // 2) + [0]
+        ))
+        self.C = [Fixed(star(constants)) for constants in ROUND_CONSTANTS]
+
+        # Witness columns
+        self.state = [Witness() for _ in range(STATE_SIZE)]
+        self.output = [Witness() for _ in range(OUTPUT_SIZE)]
+
+        # Some dummy main machine.
+        self.output_regs = [Witness() for _ in range(OUTPUT_SIZE)]
+        self.SECOND_ROW = Fixed([0, 1] + star([0]))
+
+    def __call__(self) -> PIL:
+        
+        # Add round constants, apply S-Box, and multiply with MDS matrix
+        new_state = [state + C for state, C in zip(self.state, self.C)]
+        x5 = [s * s * s * s * s for s in new_state]
+        new_state = [x5[0]] + [self.PARTIAL * (a - x5) + x5 for a, x5 in zip(new_state[1:], x5[1:])]
+        new_state = [dot_product(M_row, new_state) for M_row in M]
+
+        # New state should be copied to the state in the next row
+        for s, s_new in zip(self.state, new_state):
+            yield (s.n - s_new) * (1-self.LAST) == 0
+
+        # The output is the first element of the state in the last row
+        for o, s in zip(self.output, self.state):
+            yield self.LASTBLOCK * (o - s) == 0
+        
+        # The output is kept constant within the block
+        for o in self.output:
+            yield (o.n - o) * (1 - self.LAST) == 0
+        
+        # Some dummy main machine.
+        yield lookup((self.SECOND_ROW, [NumberExpression(0)] * STATE_SIZE + self.output_regs), (self.FIRSTBLOCK, self.state + self.output_regs))
