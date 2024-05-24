@@ -287,7 +287,7 @@ def run(generator: Callable[[], PIL], n: int, field: str) -> None:
     with open(filename, "w") as file:
         file.write(pil)
 
-    prover = "halo2-mock" if field == "bn254" else "estark"
+    prover = "halo2-mock" if field == "bn254" else "estark-starky"
 
     subprocess.run(["powdr", "pil", filename, "-o", "output", "-f", "--field", field, "--prove-with", prover])
 
