@@ -128,7 +128,7 @@ class WitnessColumn(Expression, Column):
         return self.name + ("'" if self.is_next else "")
 
 class FixedColumn(Expression, Column):
-    def __init__(self, name: str, values: 'ConstantList', is_next=False):
+    def __init__(self, name: str, values: Union['ConstantList',str], is_next=False):
         super().__init__()
         self.name = name
         self.values = values
@@ -141,7 +141,10 @@ class FixedColumn(Expression, Column):
     
     @property
     def declaration(self):
-        return f"col fixed {self.name} = {self.values};"
+        if isinstance(self.values, str):
+            return f"col fixed {self.name}(i){{{self.values}}};"
+        else:
+            return f"col fixed {self.name} = {self.values};"
 
     def __str__(self):
         return self.name + ("'" if self.is_next else "")
