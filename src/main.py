@@ -10,8 +10,8 @@ def main():
     print("\n\n==== FIB ====\n")
     run(fib, 1024, "bn254")
 
-    print("\n\n==== FIB (via circuit) ====\n")
-    run(FibCircuit(), 1024, "bn254")
+    #print("\n\n==== FIB (via circuit) ====\n")
+    #run(FibCircuit(), 1024, "bn254")
     
     print("\n\n==== POSEIDON (BN254) ====\n")
     run(poseidon_bn254, 1024, "bn254")

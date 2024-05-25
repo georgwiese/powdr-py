@@ -188,9 +188,10 @@ class PolynomialIdentity(Identity):
     def __str__(self):
         return f"{str(self.left)} = {str(self.right)};"
     
-class LookupIdentity(Identity):
-    def __init__(self, left_selector: Optional['Expression'], left_expressions: List['Expression'], right_selector: Optional['Expression'], right_expressions: List['Expression']):
+class LookupOrPermutationIdentity(Identity):
+    def __init__(self, is_lookup: bool, left_selector: Optional['Expression'], left_expressions: List['Expression'], right_selector: Optional['Expression'], right_expressions: List['Expression']):
         super().__init__()
+        self.is_lookup = is_lookup
         self.left_selector = left_selector
         self.left_expressions = left_expressions
         self.right_selector = right_selector
@@ -209,15 +210,25 @@ class LookupIdentity(Identity):
     def __str__(self):
         left_selector = "" if self.left_selector is None else f"{self.left_selector} "
         right_selector = "" if self.right_selector is None else f"{self.right_selector} "
-        return f"{left_selector}{{ {', '.join(map(str, self.left_expressions))} }} in {right_selector}{{ {', '.join(map(str, self.right_expressions))} }};"
+        keyword = "in" if self.is_lookup else "is"
+        return f"{left_selector}{{ {', '.join(map(str, self.left_expressions))} }} {keyword} {right_selector}{{ {', '.join(map(str, self.right_expressions))} }};"
 
-def lookup(left: Union[List['Expression'], Tuple['Expression', List['Expression']]], 
-           right: Union[List['Expression'], Tuple['Expression', List['Expression']]]) -> LookupIdentity:
+def make_lookup_or_permutation(is_lookup: bool, left: Union[List['Expression'], Tuple['Expression', List['Expression']]], 
+                                right: Union[List['Expression'], Tuple['Expression', List['Expression']]]) -> LookupOrPermutationIdentity:
     
     left_selector, left_expressions = (left[0], left[1]) if isinstance(left, tuple) else (None, left)
     right_selector, right_expressions = (right[0], right[1]) if isinstance(right, tuple) else (None, right)
     
-    return LookupIdentity(left_selector, left_expressions, right_selector, right_expressions)
+    return LookupOrPermutationIdentity(is_lookup, left_selector, left_expressions, right_selector, right_expressions)
+
+
+def lookup(left: Union[List['Expression'], Tuple['Expression', List['Expression']]], 
+           right: Union[List['Expression'], Tuple['Expression', List['Expression']]]) -> LookupOrPermutationIdentity:
+    return make_lookup_or_permutation(True, left, right)
+
+def permutation(left: Union[List['Expression'], Tuple['Expression', List['Expression']]],
+                right: Union[List['Expression'], Tuple['Expression', List['Expression']]]) -> LookupOrPermutationIdentity:
+    return make_lookup_or_permutation(False, left, right)
 
 class ConstantList:
 
