@@ -281,10 +281,11 @@ def run(
     generator: Callable[[], PIL],
     n: int,
     field: str,
+    output_name: str = "hello_world",
     powdr_cmd: list[str] = ["powdr"],
 ) -> None:
     pil = generate_pil(generator, n)
-    filename = f"output/{generator.__name__}.pil"
+    filename = f"output/{output_name}.pil"
 
     if not os.path.exists("output"):
         os.makedirs("output")
