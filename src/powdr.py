@@ -294,7 +294,8 @@ def run(
 
     prover = "halo2-mock" if field == "bn254" else "estark-starky"
 
-    subprocess.run(powdr_cmd + ["pil", filename, "-o", "output", "-f", "--field", field, "--prove-with", prover])
+    result = subprocess.run(powdr_cmd + ["pil", filename, "-o", "output", "-f", "--field", field, "--prove-with", prover])
+    assert result.returncode == 0
 
 class Witness:
     def __init__(self):
