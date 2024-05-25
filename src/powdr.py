@@ -277,7 +277,12 @@ def generate_pil(generator: Callable[[], PIL], n: int) -> str:
     
     return pil
 
-def run(generator: Callable[[], PIL], n: int, field: str) -> None:
+def run(
+    generator: Callable[[], PIL],
+    n: int,
+    field: str,
+    powdr_cmd: list[str] = ["powdr"],
+) -> None:
     pil = generate_pil(generator, n)
     filename = f"output/{generator.__name__}.pil"
 
@@ -289,7 +294,7 @@ def run(generator: Callable[[], PIL], n: int, field: str) -> None:
 
     prover = "halo2-mock" if field == "bn254" else "estark-starky"
 
-    subprocess.run(["powdr", "pil", filename, "-o", "output", "-f", "--field", field, "--prove-with", prover])
+    subprocess.run(powdr_cmd + ["pil", filename, "-o", "output", "-f", "--field", field, "--prove-with", prover])
 
 class Witness:
     def __init__(self):
