@@ -137,7 +137,7 @@ class FixedColumn(Expression, Column):
     @property
     def n(self):
         assert not self.is_next
-        return FixedColumn(self.name, is_next=True)
+        return FixedColumn(self.name, self.values, is_next=True)
     
     @property
     def declaration(self):
